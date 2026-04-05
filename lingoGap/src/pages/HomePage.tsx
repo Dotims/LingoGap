@@ -1,5 +1,5 @@
-import { Button, Chip, TextArea } from '@heroui/react'
 import { motion } from 'framer-motion'
+import { DictationPanel } from '../components/DictationPanel'
 
 type HomePageProps = {
   isDark: boolean
@@ -15,10 +15,6 @@ export function HomePage({ isDark }: HomePageProps) {
         isDark ? 'border-zinc-800 bg-zinc-950/80' : 'border-zinc-200/80 bg-white/80'
       }`}
     >
-      <Chip color="accent" variant="soft" className="mb-4 font-medium">
-        Home Page
-      </Chip>
-
       <h1
         className={`max-w-3xl text-4xl font-semibold leading-tight tracking-tight md:text-5xl ${
           isDark ? 'text-zinc-100' : 'text-zinc-900'
@@ -32,22 +28,7 @@ export function HomePage({ isDark }: HomePageProps) {
         into this transcript area.
       </p>
 
-      <div className="mt-8">
-        <TextArea
-          placeholder="Speech transcript will appear here. You can also type manually."
-          rows={10}
-          className="w-full"
-        />
-      </div>
-
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Button variant="primary" size="lg" className="font-medium">
-          Start Recording
-        </Button>
-        <Button size="lg" variant="outline" className="font-medium">
-          Stop Recording
-        </Button>
-      </div>
+      <DictationPanel isDark={isDark} />
     </motion.section>
   )
 }
