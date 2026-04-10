@@ -1,8 +1,15 @@
-import { Button, TextArea } from '@heroui/react'
+import { Button } from '@heroui/react'
 import { useEffect, useRef, useState } from 'react'
 
 type DictationPanelProps = {
   isDark: boolean
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: any
+    webkitSpeechRecognition: any
+  }
 }
 
 export function DictationPanel({ isDark }: DictationPanelProps) {
@@ -11,8 +18,7 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
   const [isSupported, setIsSupported] = useState(true)
   const [isListening, setIsListening] = useState(false)
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
-
+  const recognitionRef = useRef<any>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -23,31 +29,89 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
       setError('Web Speech API is not supported in this browser')
       return;
     }
-    console.log('Speech ctor found', !!SpeechRecognitionCtor)
+
+    const recognition = new SpeechRecognitionCtor()
+    recognition.lang = 'en-US'
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognitionRef.current = recognition
+
+    recognition.onstart = () => {
+      setIsRecording(true)
+      setIsListening(true)
+      setError(null)
+    }
+
+    recognition.onend = () => {
+      setIsRecording(false)
+      setIsListening(false)
+    }
+
+    recognition.onerror = (event: any) => {
+      setError(event.error || 'Speech recognition error')
+    }
+
+    recognition.onresult = (event: any) => {
+      let interimTranscript = ''
+      let finalText = ''
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalText += event.results[i][0].transcript + ' '
+        } else {
+          interimTranscript += event.results[i][0].transcript + ' '
+        }
+      }
+
+      if (finalText) {
+        setTranscript(prev => (prev + ' ' + finalText).trim())
+      }
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop()
+        recognitionRef.current = null
+      }
+    }
   }, [])
 
 
   const handleStart = () => {
-    setIsRecording(true)
-    // TODO: You will trigger Web Speech API here
+    recognitionRef.current?.start()
   }
 
   const handleStop = () => {
-    setIsRecording(false)
-    // TODO: You will stop Web Speech API here
+    recognitionRef.current?.stop()
   }
 
   return (
     <div className={`mt-8 ${isDark ? 'dark-mode-context' : 'light-mode-context'}`}>
-      <TextArea
+      <textarea
         value={transcript}
         onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTranscript(e.target.value)}
         placeholder="Speech transcript will appear here. You can also type manually."
         rows={10}
-        className={`w-full rounded-xl transition-all duration-300 ${
-          isRecording ? 'shadow-[0_0_15px_rgba(239,68,68,0.2)] border-red-500/50' : ''
+        className={`w-full resize-y rounded-xl border px-4 py-3 text-base leading-7 outline-none transition-colors ${
+          isDark
+            ? 'border-zinc-800 bg-zinc-950/50 text-zinc-100 focus:border-zinc-600'
+            : 'border-zinc-200 bg-white/50 text-zinc-900 focus:border-zinc-400'
         }`}
       />
+
+      <div className="mt-3 min-h-6 text-sm">
+        {!isSupported && (
+          <p className="text-amber-600 dark:text-amber-400">
+            Speech recognition is not supported in this browser.
+          </p>
+        )}
+        {error && <p className="text-red-600 dark:text-red-400">{error}</p>}
+        {isSupported && !error && (
+          <p className={isListening ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}>
+            {isListening ? 'Listening...' : 'Ready to record'}
+          </p>
+        )}
+      </div>
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Button 
