@@ -1,5 +1,5 @@
 import { Button, TextArea } from '@heroui/react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type DictationPanelProps = {
   isDark: boolean
@@ -8,6 +8,24 @@ type DictationPanelProps = {
 export function DictationPanel({ isDark }: DictationPanelProps) {
   const [transcript, setTranscript] = useState('')
   const [isRecording, setIsRecording] = useState(false)
+  const [isSupported, setIsSupported] = useState(true)
+  const [isListening, setIsListening] = useState(false)
+
+  const recognitionRef = useRef<SpeechRecognition | null>(null)
+
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    
+    if (!SpeechRecognitionCtor) {
+      setIsSupported(false);
+      setError('Web Speech API is not supported in this browser')
+      return;
+    }
+    console.log('Speech ctor found', !!SpeechRecognitionCtor)
+  }, [])
+
 
   const handleStart = () => {
     setIsRecording(true)
