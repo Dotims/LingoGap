@@ -17,6 +17,7 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
   const [isRecording, setIsRecording] = useState(false)
   const [isSupported, setIsSupported] = useState(true)
   const [isListening, setIsListening] = useState(false)
+  const [interimTranscript, setInterimTranscript] = useState('');
 
   const recognitionRef = useRef<any>(null)
   const [error, setError] = useState<string | null>(null)
@@ -52,20 +53,22 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
     }
 
     recognition.onresult = (event: any) => {
-      let interimTranscript = ''
+      let nextInterimText = ''
       let finalText = ''
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
           finalText += event.results[i][0].transcript + ' '
         } else {
-          interimTranscript += event.results[i][0].transcript + ' '
+          nextInterimText += event.results[i][0].transcript + ' '
         }
       }
 
       if (finalText) {
         setTranscript(prev => (prev + ' ' + finalText).trim())
       }
+
+      setInterimTranscript(nextInterimText);
     }
 
     return () => {
@@ -76,13 +79,14 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
     }
   }, [])
 
-
   const handleStart = () => {
+    setInterimTranscript('')
     recognitionRef.current?.start()
   }
 
   const handleStop = () => {
     recognitionRef.current?.stop()
+    setInterimTranscript('')
   }
 
   return (
@@ -98,6 +102,13 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
             : 'border-zinc-200 bg-white/50 text-zinc-900 focus:border-zinc-400'
         }`}
       />
+      
+      
+      {interimTranscript && (
+        <p className="mt-2 text-sm text-zinc-500 italic">
+          {interimTranscript}
+        </p>
+      )}
 
       <div className="mt-3 min-h-6 text-sm">
         {!isSupported && (
