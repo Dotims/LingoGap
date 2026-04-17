@@ -1,5 +1,6 @@
 import { Button } from '@heroui/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { buildHighlightedTokens, countPolishTokens } from '../lib/transcriptUtils'
 
 type DictationPanelProps = {
   isDark: boolean
@@ -11,8 +12,6 @@ declare global {
     webkitSpeechRecognition: any
   }
 }
-
-const POLISH_WORDS = new Set(['jest', 'dobra', 'czesc', 'dziekuje', 'prosze', 'tak', 'nie'])
 
 export function DictationPanel({ isDark }: DictationPanelProps) {
   const [transcript, setTranscript] = useState('')
@@ -96,18 +95,12 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
   }
 
   const highlightedTokens = useMemo(() => {
-    return transcript
-      .split(/(\s+|[.,!?;:])/)
-      .map((token) => {
-        const normalized = token.toLowerCase().replace(/[^a-ząćęłńóśźż]/gi, '')    
-        return {
-          text: token,
-          isPolish: normalized.length > 0 && POLISH_WORDS.has(normalized)
-        }
-      })
+    return buildHighlightedTokens(transcript)
   }, [transcript])
 
-  const polishCount = highlightedTokens.filter((t) => t.isPolish).length
+  const polishCount = useMemo(() => {
+    return countPolishTokens(highlightedTokens)
+  }, [highlightedTokens])
 
   return (
     <div className={`mt-8 ${isDark ? 'dark-mode-context' : 'light-mode-context'}`}>
