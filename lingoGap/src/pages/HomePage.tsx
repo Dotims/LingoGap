@@ -20,12 +20,12 @@ export function HomePage({ isDark }: HomePageProps) {
           isDark ? 'text-zinc-100' : 'text-zinc-900'
         }`}
       >
-        Speak naturally. Keep your flow. Learn from every Polish fallback.
+        Speak naturally. Switch to Polish when needed.
       </h1>
 
       <p className={`mt-4 max-w-2xl text-base leading-relaxed ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-        Your app now has routing and theme switching. Next, we can plug speech-to-text
-        into this transcript area.
+        Record yourself speaking English. When you can't find a word, toggle Polish mode —
+        your Polish words are automatically translated, highlighted, and kept for review.
       </p>
 
       <DictationPanel isDark={isDark} />
