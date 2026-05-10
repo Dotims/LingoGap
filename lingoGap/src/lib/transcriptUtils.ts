@@ -101,3 +101,30 @@ export function createSegment(
     isTranslated: !!originalPolish,
   }
 }
+
+export function parseEditedText(text: string): TranscriptSegment[] {
+  const pieces = text.split(/(\[[^|\]]+\s*\|\s*[^\]]+\])/g)
+  
+  const finalSegments: TranscriptSegment[] = []
+
+  for (const piece of pieces) {
+    if (piece === '') continue
+
+    if (piece.startsWith('[') && piece.endsWith(']')) {
+      const insideText = piece.slice(1, -1)
+
+      const words = insideText.split("|")
+
+      if (words.length === 2) {
+        const polishWord = words[0].trim()
+        const englishWord = words[1].trim()
+
+        finalSegments.push(createSegment(polishWord, englishWord))
+      }
+    } else {
+      finalSegments.push(createSegment(piece))
+    }
+  }
+
+  return finalSegments
+}

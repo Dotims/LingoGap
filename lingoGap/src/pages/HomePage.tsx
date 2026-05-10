@@ -20,11 +20,11 @@ export function HomePage({ isDark }: HomePageProps) {
           isDark ? 'text-zinc-100' : 'text-zinc-900'
         }`}
       >
-        Speak naturally. Switch to Polish when needed.
+        transcription with the option of adding your native language
       </h1>
 
       <p className={`mt-4 max-w-2xl text-base leading-relaxed ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-        Record yourself speaking English. When you can't find a word, toggle Polish mode —
+        Record yourself speaking English. When you can't find a word, toggle Polish mode,
         your Polish words are automatically translated, highlighted, and kept for review.
       </p>
 

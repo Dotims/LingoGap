@@ -1,5 +1,5 @@
 /**
- * Translation service for Polish → English using MyMemory free API.
+ * Translation service for Polish => English using MyMemory free API.
  * No API key required for reasonable usage (~5000 words/day).
  */
 

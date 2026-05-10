@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   createSegment,
+  parseEditedText
 } from '../lib/transcriptUtils'
 import { useDictationRecognition } from '../hooks/useDictationRecognition'
 
@@ -40,16 +41,27 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
     if (isEditing) return
     if (segments.length === 0) return
     setHoveredSegmentId(null)
-    setEditText(segments.map((s) => s.displayText).join(' '))
+
+    setEditText(segments.map((s) => {
+      if (s.isTranslated) {
+        return `[${s.originalPolish} | ${s.displayText}]`
+      } else {
+        return s.displayText
+      }
+    }).join(' ')
+    )
+    
     setIsEditing(true)
   }, [isEditing, segments])
+
+  
 
   const leaveEditMode = useCallback(() => {
     if (!isEditing) return
 
     const newText = editText.trim()
     if (newText) {
-      setSegments([createSegment(newText)])
+      setSegments(parseEditedText(newText))
     } else {
       setSegments([])
     }
