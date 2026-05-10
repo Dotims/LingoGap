@@ -1,5 +1,5 @@
 import { Button } from '@heroui/react'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   createSegment,
@@ -14,6 +14,7 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
   const [hoveredSegmentId, setHoveredSegmentId] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState('')
+  const transcriptAreaRef = useRef<HTMLDivElement | null>(null)
   const {
     segments,
     setSegments,
@@ -34,6 +35,46 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
     () => segments.filter((s) => s.isTranslated).length,
     [segments]
   )
+
+  const enterEditMode = useCallback(() => {
+    if (isEditing) return
+    if (segments.length === 0) return
+    setHoveredSegmentId(null)
+    setEditText(segments.map((s) => s.displayText).join(' '))
+    setIsEditing(true)
+  }, [isEditing, segments])
+
+  const leaveEditMode = useCallback(() => {
+    if (!isEditing) return
+
+    const newText = editText.trim()
+    if (newText) {
+      setSegments([createSegment(newText)])
+    } else {
+      setSegments([])
+    }
+
+    setHoveredSegmentId(null)
+    setIsEditing(false)
+    setEditText('')
+  }, [editText, isEditing, setSegments])
+
+  useEffect(() => {
+    if (!isEditing) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const targetNode = event.target as Node | null
+      if (!targetNode) return
+      const container = transcriptAreaRef.current
+      if (container && !container.contains(targetNode)) {
+        leaveEditMode()
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => document.removeEventListener('pointerdown', handlePointerDown)
+  }, [isEditing, leaveEditMode])
+
 
   return (
     <div className={`mt-8 ${isDark ? 'dark-mode-context' : 'light-mode-context'}`}>
@@ -79,23 +120,11 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
       </div>
 
       {/* Transcript display — rich segmented view / editable textarea */}
-      <div className="relative">
+      <div className="relative" ref={transcriptAreaRef}>
         {/* Toggle edit / display */}
         {segments.length > 0 && (
           <button
-            onClick={() => {
-              if (!isEditing) {
-                setEditText(segments.map((s) => s.displayText).join(' '))
-              } else {
-                const newText = editText.trim()
-                if (newText) {
-                  setSegments([createSegment(newText)])
-                } else {
-                  setSegments([])
-                }
-              }
-              setIsEditing(!isEditing)
-            }}
+            onClick={isEditing ? leaveEditMode : enterEditMode}
             className={`absolute right-3 top-3 z-10 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
               isDark
                 ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200'
@@ -125,6 +154,7 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
               ? 'border-zinc-800 bg-zinc-950/50 text-zinc-100'
               : 'border-zinc-200 bg-white/50 text-zinc-900'
           }`}
+          onDoubleClick={enterEditMode}    
         >
         {segments.length === 0 && !interimTranscript && (
           <p className={`italic ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
