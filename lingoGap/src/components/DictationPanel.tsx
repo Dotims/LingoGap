@@ -1,215 +1,39 @@
 import { Button } from '@heroui/react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  type TranscriptSegment,
   createSegment,
 } from '../lib/transcriptUtils'
-import { translatePolishToEnglish } from '../lib/translationService'
+import { useDictationRecognition } from '../hooks/useDictationRecognition'
 
 type DictationPanelProps = {
   isDark: boolean
 }
 
-declare global {
-  interface Window {
-    SpeechRecognition: any
-    webkitSpeechRecognition: any
-  }
-}
-
 export function DictationPanel({ isDark }: DictationPanelProps) {
-  const [segments, setSegments] = useState<TranscriptSegment[]>([])
-  const [isRecording, setIsRecording] = useState(false)
-  const [isSupported, setIsSupported] = useState(true)
-  const [isListening, setIsListening] = useState(false)
-  const [interimTranscript, setInterimTranscript] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [isPolishMode, setIsPolishMode] = useState(false)
-  const [isTranslating, setIsTranslating] = useState(false)
   const [hoveredSegmentId, setHoveredSegmentId] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState('')
-
-  const recognitionRef = useRef<any>(null)
-  const shouldRestartRef = useRef(false)
-  const isPolishModeRef = useRef(false)
-
-  // Keep ref in sync with state
-  useEffect(() => {
-    isPolishModeRef.current = isPolishMode
-  }, [isPolishMode])
-
-  const createRecognition = useCallback((lang: string) => {
-    const SpeechRecognitionCtor =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition
-
-    if (!SpeechRecognitionCtor) {
-      setIsSupported(false)
-      setError('Web Speech API is not supported in this browser')
-      return null
-    }
-
-    const recognition = new SpeechRecognitionCtor()
-    recognition.lang = lang
-    recognition.continuous = true
-    recognition.interimResults = true
-    return recognition
-  }, [])
-
-  const setupRecognition = useCallback(
-    (recognition: any) => {
-      recognition.onstart = () => {
-        setIsRecording(true)
-        setIsListening(true)
-        setError(null)
-      }
-
-      recognition.onend = () => {
-        // If we need to restart (e.g. language switch), do so
-        if (shouldRestartRef.current) {
-          shouldRestartRef.current = false
-          const newLang = isPolishModeRef.current ? 'pl-PL' : 'en-US'
-          const newRecognition = createRecognition(newLang)
-          if (newRecognition) {
-            setupRecognition(newRecognition)
-            recognitionRef.current = newRecognition
-            try {
-              newRecognition.start()
-            } catch {
-              setIsRecording(false)
-              setIsListening(false)
-            }
-          }
-          return
-        }
-        setIsRecording(false)
-        setIsListening(false)
-      }
-
-      recognition.onerror = (event: any) => {
-        if (event.error === 'aborted') return // Ignore abort errors during switch
-        setError(event.error || 'Speech recognition error')
-      }
-
-      recognition.onresult = async (event: any) => {
-        let nextInterimText = ''
-        let finalText = ''
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          if (event.results[i].isFinal) {
-            finalText += event.results[i][0].transcript + ' '
-          } else {
-            nextInterimText += event.results[i][0].transcript + ' '
-          }
-        }
-
-        if (finalText) {
-          const trimmedFinal = finalText.trim()
-
-          if (isPolishModeRef.current) {
-            // This text was spoken in Polish — translate it
-            setIsTranslating(true)
-            const result = await translatePolishToEnglish(trimmedFinal)
-            setIsTranslating(false)
-
-            if (result.success) {
-              setSegments((prev) => [
-                ...prev,
-                createSegment(result.translatedEnglish, result.originalPolish),
-              ])
-            } else {
-              // Translation failed — show original with a note
-              setSegments((prev) => [
-                ...prev,
-                createSegment(trimmedFinal, trimmedFinal),
-              ])
-            }
-          } else {
-            // Normal English text
-            setSegments((prev) => [...prev, createSegment(trimmedFinal)])
-          }
-        }
-
-        setInterimTranscript(nextInterimText)
-      }
-    },
-    [createRecognition]
-  )
-
-  // Toggle Polish mode — restarts recognition with the other language
-  const togglePolishMode = useCallback(() => {
-    if (!isListening) return
-
-    const nextMode = !isPolishMode
-    setIsPolishMode(nextMode)
-    isPolishModeRef.current = nextMode
-
-    // Stop current recognition and restart with new language
-    shouldRestartRef.current = true
-    setInterimTranscript('')
-    recognitionRef.current?.stop()
-  }, [isPolishMode, isListening])
-
-  const handleStart = useCallback(() => {
-    setInterimTranscript('')
-    setIsPolishMode(false)
-    isPolishModeRef.current = false
-
-    const recognition = createRecognition('en-US')
-    if (!recognition) return
-
-    setupRecognition(recognition)
-    recognitionRef.current = recognition
-
-    try {
-      recognition.start()
-    } catch {
-      setError('Could not start speech recognition')
-    }
-  }, [createRecognition, setupRecognition])
-
-  const handleStop = useCallback(() => {
-    shouldRestartRef.current = false
-    recognitionRef.current?.stop()
-    setInterimTranscript('')
-    setIsPolishMode(false)
-    isPolishModeRef.current = false
-  }, [])
-
-  const handleClear = useCallback(() => {
-    setSegments([])
-    setInterimTranscript('')
-  }, [])
-
-  // Keyboard shortcut: press Alt to toggle Polish mode
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Alt' && isListening) {
-        e.preventDefault()
-        togglePolishMode()
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isListening, togglePolishMode])
-
+  const {
+    segments,
+    setSegments,
+    isRecording,
+    isSupported,
+    isListening,
+    interimTranscript,
+    error,
+    isPolishMode,
+    isTranslating,
+    startRecording,
+    stopRecording,
+    clearTranscript,
+    togglePolishMode,
+  } = useDictationRecognition()
 
   const polishCount = useMemo(
     () => segments.filter((s) => s.isTranslated).length,
     [segments]
   )
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop()
-        recognitionRef.current = null
-      }
-    }
-  }, [])
 
   return (
     <div className={`mt-8 ${isDark ? 'dark-mode-context' : 'light-mode-context'}`}>
@@ -296,7 +120,7 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
           />
         ) : (
         <div
-          className={`relative min-h-[180px] w-full rounded-xl border px-5 py-4 text-base leading-8 transition-colors ${
+          className={`relative min-h-45 w-full rounded-xl border px-5 py-4 text-base leading-8 transition-colors ${
             isDark
               ? 'border-zinc-800 bg-zinc-950/50 text-zinc-100'
               : 'border-zinc-200 bg-white/50 text-zinc-900'
@@ -417,7 +241,7 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
             {polishCount} translated
           </span>
           <button
-            onClick={handleClear}
+            onClick={clearTranscript}
             className={`ml-auto rounded px-2 py-0.5 text-xs transition-colors ${
               isDark
                 ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
@@ -461,14 +285,14 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
       {/* Action buttons */}
       <div className="mt-6 flex flex-wrap gap-3">
         <Button
-          variant={isRecording ? 'flat' : 'solid'}
+          variant={isRecording ? 'danger' : 'ghost'}
           size="lg"
           className={`rounded-xl px-6 py-3 font-medium transition-all ${
             isRecording
               ? 'opacity-60 cursor-not-allowed'
               : 'bg-emerald-600 text-white hover:bg-emerald-500'
           }`}
-          onPress={handleStart}
+          onPress={startRecording}
           isDisabled={isRecording}
         >
           {isRecording ? (
@@ -483,13 +307,13 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
 
         <Button
           size="lg"
-          variant={isRecording ? 'solid' : 'flat'}
+          variant={isRecording ? 'danger' : 'ghost'}
           className={`rounded-xl px-6 py-3 font-medium transition-all ${
             isRecording
               ? 'bg-red-600 text-white hover:bg-red-500'
               : 'opacity-40 cursor-not-allowed'
           }`}
-          onPress={handleStop}
+          onPress={stopRecording}
           isDisabled={!isRecording}
         >
           Stop Recording
