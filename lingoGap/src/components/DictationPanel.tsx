@@ -1,8 +1,9 @@
 import { Button } from '@heroui/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ActionButtons } from './ui/buttons'
 import {
-  createSegment,
+  // createSegment,
   parseEditedText
 } from '../lib/transcriptUtils'
 import { useDictationRecognition } from '../hooks/useDictationRecognition'
@@ -100,6 +101,12 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
     }, 2000)
   }, [segments, interimTranscript])
 
+  useEffect(() => {
+    if (!isEditing) return
+    if (interimTranscript) {
+      leaveEditMode()
+    }
+  }, [isEditing, interimTranscript, leaveEditMode])
 
   return (
     <div className={`mt-8 ${isDark ? 'dark-mode-context' : 'light-mode-context'}`}>
@@ -149,7 +156,7 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
         <div className="mb-2 flex w-full justify-end gap-2">
           <button
             onClick={handleCopy}
-            className={`flex min-w-[75px] items-center justify-center rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+            className={`flex min-w-18.75 items-center justify-center rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
               isCopied
                 ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                 : isDark
@@ -378,42 +385,11 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
       </div>
 
       {/* Action buttons */}
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Button
-          variant={isRecording ? 'danger' : 'ghost'}
-          size="lg"
-          className={`rounded-xl px-6 py-3 font-medium transition-all ${
-            isRecording
-              ? 'opacity-60 cursor-not-allowed'
-              : 'bg-emerald-600 text-white hover:bg-emerald-500'
-          }`}
-          onPress={startRecording}
-          isDisabled={isRecording}
-        >
-          {isRecording ? (
-            <span className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-              Recording...
-            </span>
-          ) : (
-            'Start Recording'
-          )}
-        </Button>
-
-        <Button
-          size="lg"
-          variant={isRecording ? 'danger' : 'ghost'}
-          className={`rounded-xl px-6 py-3 font-medium transition-all ${
-            isRecording
-              ? 'bg-red-600 text-white hover:bg-red-500'
-              : 'opacity-40 cursor-not-allowed'
-          }`}
-          onPress={stopRecording}
-          isDisabled={!isRecording}
-        >
-          Stop Recording
-        </Button>
-      </div>
+      <ActionButtons 
+        isRecording={isRecording}
+        startRecording={startRecording}
+        stopRecording={stopRecording}
+      />
 
       {/* How to use tip */}
       {!isListening && segments.length === 0 && (
