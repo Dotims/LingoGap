@@ -11,19 +11,23 @@ export function HomePage({ isDark }: HomePageProps) {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.55, delay: 0.15 }}
-      className={`rounded-3xl border p-8 ${
+      className={`rounded-2xl border p-5 sm:rounded-3xl sm:p-8 ${
         isDark ? 'border-zinc-800 bg-zinc-950/80' : 'border-zinc-200/80 bg-white/80'
       }`}
     >
       <h1
-        className={`max-w-3xl text-4xl font-semibold leading-tight tracking-tight md:text-5xl ${
+        className={`max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-5xl ${
           isDark ? 'text-zinc-100' : 'text-zinc-900'
         }`}
       >
         transcription with the option of adding your native language
       </h1>
 
-      <p className={`mt-4 max-w-2xl text-base leading-relaxed ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+      <p
+        className={`mt-4 max-w-2xl text-sm leading-relaxed sm:text-base ${
+          isDark ? 'text-zinc-400' : 'text-zinc-600'
+        }`}
+      >
         Record yourself speaking English. When you can't find a word, toggle Polish mode,
         your Polish words are automatically translated, highlighted, and kept for review.
       </p>

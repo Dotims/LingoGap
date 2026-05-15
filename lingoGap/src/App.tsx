@@ -30,7 +30,7 @@ function App() {
       >
         <Header />
 
-        <main className="mx-auto w-full max-w-6xl px-6 py-10">
+        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
           <Routes>
             <Route path="/" element={<HomePage isDark={isDark} />} />
             <Route path="/flashcards" element={<FlashcardsPage isDark={isDark} />} />

@@ -25,20 +25,13 @@ export function Header() {
         isDark ? 'border-zinc-800/80 bg-zinc-950/70' : 'border-zinc-200/70 bg-zinc-50/70'
       }`}
     >
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+      <div className="mx-auto flex w-full max-w-6xl flex-col items-start justify-between gap-3 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-6 sm:py-4">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="flex items-center gap-3"
+          className="flex w-full items-center gap-3 sm:w-auto"
         >
-          <span
-            className={`grid h-10 w-10 place-items-center rounded-xl text-sm font-bold tracking-wide ${
-              isDark ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-900 text-white'
-            }`}
-          >
-            LG
-          </span>
           <div>
             <p
               className={`text-sm font-semibold uppercase tracking-[0.16em] ${
@@ -57,14 +50,14 @@ export function Header() {
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.1 }}
-          className="flex items-center gap-3"
+          className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:flex-nowrap sm:justify-end"
         >
-          <nav className="flex items-center gap-2">
+          <nav className="flex flex-wrap items-center gap-2">
             <NavLink to="/">
               {({ isActive }) => (
                 <Button
                   variant={isActive ? 'primary' : 'ghost'}
-                  className="rounded-full font-medium"
+                  className="rounded-full font-medium text-sm sm:text-base"
                 >
                   Home
                 </Button>
@@ -74,7 +67,7 @@ export function Header() {
               {({ isActive }) => (
                 <Button
                   variant={isActive ? 'primary' : 'ghost'}
-                  className="rounded-full font-medium"
+                  className="rounded-full font-medium text-sm sm:text-base"
                 >
                   Flashcards
                 </Button>

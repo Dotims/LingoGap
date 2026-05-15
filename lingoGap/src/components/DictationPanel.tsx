@@ -109,9 +109,9 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
   }, [isEditing, interimTranscript, leaveEditMode])
 
   return (
-    <div className={`mt-8 ${isDark ? 'dark-mode-context' : 'light-mode-context'}`}>
+    <div className={`mt-6 sm:mt-8 ${isDark ? 'dark-mode-context' : 'light-mode-context'}`}>
       {/* Language mode indicator */}
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div
           className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
             isPolishMode
@@ -136,7 +136,7 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
             <Button
               size="sm"
               variant={isPolishMode ? 'primary' : 'outline'}
-              className={`rounded-full px-5 py-2 font-medium transition-all duration-200 ${
+              className={`w-full sm:w-auto rounded-full px-5 py-2 text-sm font-medium transition-all duration-200 sm:text-base ${
                 isPolishMode
                   ? 'bg-amber-500 text-black hover:bg-amber-400'
                   : isDark
@@ -153,7 +153,7 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
 
       {/* Action Bar that sits above the text input */}
       {segments.length > 0 && (
-        <div className="mb-2 flex w-full justify-end gap-2">
+        <div className="mb-2 flex w-full flex-wrap justify-start gap-2 sm:justify-end">
           <button
             onClick={handleCopy}
             className={`flex min-w-18.75 items-center justify-center rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
@@ -213,7 +213,7 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
             onChange={(e) => setEditText(e.target.value)}
             placeholder="Edit your transcript here..."
             rows={8}
-            className={`w-full resize-y rounded-xl border px-5 py-4 pt-10 text-base leading-8 outline-none transition-colors ${
+            className={`w-full resize-y rounded-xl border px-4 py-3 pt-9 text-base leading-8 outline-none transition-colors sm:px-5 sm:py-4 sm:pt-10 ${
               isDark
                 ? 'border-zinc-700 bg-zinc-950/50 text-zinc-100 focus:border-zinc-500'
                 : 'border-zinc-200 bg-white/50 text-zinc-900 focus:border-zinc-400'
@@ -221,7 +221,7 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
           />
         ) : (
         <div
-          className={`relative min-h-45 w-full rounded-xl border px-5 py-4 text-base leading-8 transition-colors ${
+          className={`relative min-h-45 w-full rounded-xl border px-4 py-3 text-base leading-8 transition-colors sm:px-5 sm:py-4 ${
             isDark
               ? 'border-zinc-800 bg-zinc-950/50 text-zinc-100'
               : 'border-zinc-200 bg-white/50 text-zinc-900'
@@ -332,7 +332,7 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`mt-2 flex items-center gap-4 rounded-lg px-3 py-2 text-xs ${
+          className={`mt-2 flex flex-wrap items-center gap-2 rounded-lg px-3 py-2 text-xs sm:gap-4 ${
             isDark ? 'bg-zinc-900/50 text-zinc-500' : 'bg-zinc-50 text-zinc-500'
           }`}
         >
