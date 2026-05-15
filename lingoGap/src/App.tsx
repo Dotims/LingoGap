@@ -4,6 +4,7 @@ import { useTheme } from 'next-themes'
 import { FlashcardsPage } from './pages/FlashcardsPage.tsx'
 import { HomePage } from './pages/HomePage.tsx'
 import { Header } from './components/Header.tsx'
+import { Footer } from './components/Footer.tsx'
 
 function App() {
   const { resolvedTheme } = useTheme()
@@ -37,6 +38,8 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
+
+        <Footer isDark={isDark} />
       </div>
     </BrowserRouter>
   )
