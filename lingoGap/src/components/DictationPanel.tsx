@@ -1,8 +1,9 @@
 import { Button } from '@heroui/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ActionButtons } from './ui/buttons'
 import {
-  createSegment,
+  // createSegment,
   parseEditedText
 } from '../lib/transcriptUtils'
 import { useDictationRecognition } from '../hooks/useDictationRecognition'
@@ -15,6 +16,7 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
   const [hoveredSegmentId, setHoveredSegmentId] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState('')
+  const [isCopied, setIsCopied] = useState(false)
   const transcriptAreaRef = useRef<HTMLDivElement | null>(null)
   const {
     segments,
@@ -53,7 +55,6 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
     
     setIsEditing(true)
   }, [isEditing, segments])
-
   
 
   const leaveEditMode = useCallback(() => {
@@ -87,6 +88,25 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
     return () => document.removeEventListener('pointerdown', handlePointerDown)
   }, [isEditing, leaveEditMode])
 
+
+  const handleCopy = useCallback(() => {
+    const cleanText = segments.map(s => s.displayText).join(' ') + 
+                      (interimTranscript ? ` ${interimTranscript}` : '')
+    
+    navigator.clipboard.writeText(cleanText.trim())
+    
+    setIsCopied(true)
+    setTimeout(() => {
+      setIsCopied(false)
+    }, 2000)
+  }, [segments, interimTranscript])
+
+  useEffect(() => {
+    if (!isEditing) return
+    if (interimTranscript) {
+      leaveEditMode()
+    }
+  }, [isEditing, interimTranscript, leaveEditMode])
 
   return (
     <div className={`mt-8 ${isDark ? 'dark-mode-context' : 'light-mode-context'}`}>
@@ -131,22 +151,62 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
         )}
       </div>
 
-      {/* Transcript display — rich segmented view / editable textarea */}
-      <div className="relative" ref={transcriptAreaRef}>
-        {/* Toggle edit / display */}
-        {segments.length > 0 && (
+      {/* Action Bar that sits above the text input */}
+      {segments.length > 0 && (
+        <div className="mb-2 flex w-full justify-end gap-2">
           <button
-            onClick={isEditing ? leaveEditMode : enterEditMode}
-            className={`absolute right-3 top-3 z-10 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
-              isDark
+            onClick={handleCopy}
+            className={`flex min-w-18.75 items-center justify-center rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+              isCopied
+                ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                : isDark
                 ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200'
                 : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700'
             }`}
           >
+            <AnimatePresence mode="wait">
+              {isCopied ? (
+                <motion.span
+                  key="copied"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center gap-1"
+                >
+                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Copied
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="copy"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  Copy
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </button>
+          <button
+            onClick={isEditing ? leaveEditMode : enterEditMode}
+            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+              isDark
+                ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+            }`}
+          >
             {isEditing ? 'Done' : 'Edit'}
           </button>
-        )}
+        </div>
+      )}
 
+      {/* Transcript display — rich segmented view / editable textarea */}
+      <div className="relative" ref={transcriptAreaRef}>
         {isEditing ? (
           <textarea
             value={editText}
@@ -176,7 +236,7 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
           </p>
         )}
 
-        <div className="flex flex-wrap gap-x-1.5 gap-y-1">
+        <div className="block">
           {segments.map((segment) => (
             <span key={segment.id} className="inline">
               {segment.isTranslated ? (
@@ -325,42 +385,11 @@ export function DictationPanel({ isDark }: DictationPanelProps) {
       </div>
 
       {/* Action buttons */}
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Button
-          variant={isRecording ? 'danger' : 'ghost'}
-          size="lg"
-          className={`rounded-xl px-6 py-3 font-medium transition-all ${
-            isRecording
-              ? 'opacity-60 cursor-not-allowed'
-              : 'bg-emerald-600 text-white hover:bg-emerald-500'
-          }`}
-          onPress={startRecording}
-          isDisabled={isRecording}
-        >
-          {isRecording ? (
-            <span className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-              Recording...
-            </span>
-          ) : (
-            'Start Recording'
-          )}
-        </Button>
-
-        <Button
-          size="lg"
-          variant={isRecording ? 'danger' : 'ghost'}
-          className={`rounded-xl px-6 py-3 font-medium transition-all ${
-            isRecording
-              ? 'bg-red-600 text-white hover:bg-red-500'
-              : 'opacity-40 cursor-not-allowed'
-          }`}
-          onPress={stopRecording}
-          isDisabled={!isRecording}
-        >
-          Stop Recording
-        </Button>
-      </div>
+      <ActionButtons 
+        isRecording={isRecording}
+        startRecording={startRecording}
+        stopRecording={stopRecording}
+      />
 
       {/* How to use tip */}
       {!isListening && segments.length === 0 && (
